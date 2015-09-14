@@ -105,7 +105,3 @@ class Axis(object):
     return dir(self.device)
 
 
-def get_axis(axis, config):
-  
-
-icebcu2 = IcePAP('icebcu2')
