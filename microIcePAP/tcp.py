@@ -1,5 +1,6 @@
 import re
 import time
+import logging
 import functools
 
 import gevent
@@ -43,6 +44,7 @@ class Socket:
                  eol='\n',      # end of line for each rx message
                  timeout=5.,    # default timeout for read write
                  ):
+        self._log = logging.getLogger('Sock({0}:{1})'.format(host, port))
         self._host = host
         self._port = port
         self._fd = None
@@ -67,6 +69,7 @@ class Socket:
         self._fd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._fd.connect((local_host, local_port))
         self._fd.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self._log.debug('Connected!')
         self._connected = True
         self._host = local_host
         self._port = local_port
@@ -129,15 +132,19 @@ class Socket:
         self._data = self._data[eol_pos + len(local_eol):]
         return msg
 
+    def _sendall(self, msg):
+        self._log.debug("Tx: %r", msg)
+        self._fd.sendall(msg)
+
     @try_connect_socket
     def write(self, msg, timeout=None):
         with self._lock:
-            self._fd.sendall(msg)
+            self._sendall(msg)
 
     @try_connect_socket
     def write_read(self, msg, write_synchro=None, size=1, timeout=None):
         with self._lock:
-            self._fd.sendall(msg)
+            self._sendall(msg)
             if write_synchro:
                 write_synchro.notify()
             return self.read(size=size, timeout=timeout)
@@ -147,7 +154,7 @@ class Socket:
         with self._lock:
             with gevent.Timeout(timeout or self._timeout,
                                 RuntimeError("write_readline timed out")):
-                self._fd.sendall(msg)
+                self._sendall(msg)
                 if write_synchro:
                     write_synchro.notify()
                 return self.readline(eol=eol, timeout=timeout)
@@ -158,7 +165,7 @@ class Socket:
         with self._lock:
             with gevent.Timeout(timeout or self._timeout,
                                 RuntimeError("write_readline timed out")):
-                self._fd.sendall(msg)
+                self._sendall(msg)
                 if write_synchro:
                     write_synchro.notify()
 
@@ -184,6 +191,7 @@ class Socket:
         try:
             while(1):
                 raw_data = self._fd.recv(16 * 1024)
+                self._log.debug("Rx: %r", raw_data)
                 if raw_data:
                     self._data += raw_data
                     self._event.set()
