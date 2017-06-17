@@ -1,0 +1,9 @@
+gevent<1.1
+
+# --- python < 2.7 dependencies ----------------------------
+
+ordereddict   ; python_version < '2.7'
+
+# --- python < 3.4 dependencies ----------------------------
+
+enum34        ; python_version < '3.4'
