@@ -2,7 +2,7 @@ import logging
 import argparse
 
 import gevent
-import microIcePAP
+import mice
 
 
 def parse_args():
@@ -17,13 +17,13 @@ def parse_args():
     level = getattr(logging, args.log_level.upper())
     logging.basicConfig(format=fmt, level=level)
 
-    icepap = microIcePAP.IcePAP(args.icepap[0])
+    icepap = mice.IcePAP(args.icepap[0])
     return icepap
 
 
 def main():
     icepap = parse_args()
-    th = microIcePAP.get_axis(icepap, 1, dict(acctime=.25, velocity=10000))
+    th = mice.get_axis(icepap, 1, dict(acctime=.25, velocity=10000))
     print '1 status:', icepap.status[1]
     print '3 status:', icepap.status[3]
     print '1,2 status:', icepap.status[1:3]
