@@ -1,3 +1,4 @@
+import logging
 import inspect
 import weakref
 import functools
@@ -9,10 +10,13 @@ try:
 except ImportError:
   from ordereddict import OrderedDict
 
-from tcp import Socket
+from .tcp import Socket
+from .status import to_status
+
 
 class IcePAPException(Exception):
   pass
+
 
 class Attr(object):
 
@@ -69,7 +73,7 @@ class AxisAttr(Attr):
       if isinstance(item, slice):
         axes = iter_axis(start=item.start, stop=item.stop, step=item.step,
                          device=self.__device)
-        self.__parent.get(self.__device, axes=axes)
+        return self.__parent.get(self.__device, axes=axes)
       else:
         axes = item,
         return self.__parent.get(self.__device, axes=axes)[item]
@@ -81,7 +85,7 @@ class AxisAttr(Attr):
       if kwargs: # a set operation
         pass
       else:
-        return self.__parent.get(self.__device, axes=args)        
+        return self.__parent.get(self.__device, axes=args)
 
 
   def __init__(self, *args, **kwargs):
@@ -122,6 +126,7 @@ class IcePAP(object):
   acctime = AxisAttr("ACCTIME")
   pos = AxisAttr("POS")
   fpos = AxisAttr("FPOS")
+  status = AxisAttr("STATUS", dtype=to_status, read_only=True)
 
   def __init__(self, host, port=5000):
     self.__s = Socket(host, port)
@@ -156,7 +161,6 @@ class Axis(object):
 
 def get_axis(icepap, axis, config):
   axis = Axis(icepap, axis)
-  for i in range(7):
-    for k, v in config.items():
-      setattr(axis, k, v)
+  for k, v in config.items():
+    setattr(axis, k, v)
   return axis
